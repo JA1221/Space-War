@@ -69,6 +69,7 @@ def main_menu():
 	draw_text(screen, "倒數三秒鐘!", 40, WIDTH/2, HEIGHT/2)
 	pygame.display.update()
 
+#顯示 文字
 def draw_text(surf, text, size, x, y):
 	font = pygame.font.Font("msjh.ttf", size)
 	text_surface = font.render(text, False, WHITE)
@@ -76,15 +77,24 @@ def draw_text(surf, text, size, x, y):
 	text_rect.midtop = (x, y)
 	surf.blit(text_surface, text_rect)
 
+#顯示 護甲
 def draw_shield_bar(surf, x, y, pct):
 	pct = max(pct, 0) 
 
 	shield_NUM = (pct / 100) * BAR_LENGTH
 	total_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
-	shield_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
+	shield_rect = pygame.Rect(x, y, shield_NUM, BAR_HEIGHT)
 	
 	pygame.draw.rect(surf, BLUE, shield_rect)
 	pygame.draw.rect(surf, WHITE, total_rect, 2)
+
+#顯示 
+def draw_lives(surf, x, y, lives, img):
+	for i in range(lives):
+		img_rect= img.get_rect()
+		img_rect.x = x + 30 * i
+		img_rect.y = y
+		surf.blit(img, img_rect)
 
 #############################
 ## Game loop
@@ -93,7 +103,7 @@ menu_display = True
 while running:
 	if menu_display:
 		main_menu()
-		pygame.time.wait(3000)
+		pygame.time.wait(1000)
 
 	clock.tick(FPS)
 	for event in pygame.event.get():
@@ -105,6 +115,9 @@ while running:
 		if event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				running = False
+	draw_shield_bar(screen, 10, 10, 50)#test
+	pygame.display.flip()	
+	pygame.time.wait(1000)
 
 
 pygame.quit()
