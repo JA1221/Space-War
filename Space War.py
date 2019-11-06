@@ -70,6 +70,7 @@ def main_menu():
     draw_text(screen, "倒數三秒鐘!", 40, WIDTH/2, HEIGHT/2)
     pygame.display.update()
 #********************* 物件 ***********************
+# 玩家
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -126,7 +127,7 @@ class Player(pygame.sprite.Sprite):
         # 移動
         self.rect.x += self.speedx
         self.rect.y += self.speedy
-        # 保持視窗界線內
+        # 保持 左右界線
         if self.rect.right > WIDTH:
             self.rect.right = WIDTH
         elif self.rect.left < 0:
@@ -142,13 +143,16 @@ class Player(pygame.sprite.Sprite):
     def shoot(self):
         ## to tell the bullet where to spawn
         now = pygame.time.get_ticks()
+        # 設定發射間距
         if now - self.last_shot > self.shoot_delay:
             self.last_shot = now
+            # 攻擊level 1
             if self.power == 1:
                 bullet = Bullet(self.rect.centerx, self.rect.top)
                 all_sprites.add(bullet)
                 bullets.add(bullet)
                 shooting_sound.play()
+            # 攻擊level 2
             if self.power == 2:
                 bullet1 = Bullet(self.rect.left, self.rect.centery)
                 bullet2 = Bullet(self.rect.right, self.rect.centery)
@@ -158,7 +162,7 @@ class Player(pygame.sprite.Sprite):
                 bullets.add(bullet2)
                 shooting_sound.play()
 
-            """ MOAR POWAH """
+            # 攻擊level 3
             if self.power >= 3:
                 bullet1 = Bullet(self.rect.left, self.rect.centery)
                 bullet2 = Bullet(self.rect.right, self.rect.centery)
@@ -180,6 +184,39 @@ class Player(pygame.sprite.Sprite):
         self.hidden = True
         self.hide_timer = pygame.time.get_ticks()
         self.rect.center = (WIDTH / 2, HEIGHT + 200)
+
+# 子彈
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = bullet_img
+        self.rect = self.image.get_rect()
+
+        self.rect.bottom = y 
+        self.rect.centerx = x
+        self.speedy = -10
+
+    def update(self):
+        # 往前飛 飛到頂部外 消除
+        self.rect.y += self.speedy
+        if self.rect.bottom < 0:
+            self.kill()
+
+# 導彈
+class Missile(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = missile_img
+        self.rect = self.image.get_rect()
+
+        self.rect.bottom = y
+        self.rect.centerx = x
+        self.speedy = -10
+
+    def update(self):
+        self.rect.y += self.speedy
+        if self.rect.bottom < 0:
+            self.kill()
 #**************************************************
 
 #顯示 文字
@@ -218,9 +255,19 @@ background = pygame.image.load(path.join(img_folder, 'starfield.png')).convert()
 background_rect = background.get_rect()
 
 #玩家
-player_img = pygame.image.load(path.join(img_folder, 'playerShip1_orange.png')).convert()
+player_img = pygame.image.load(path.join(img_folder, 'playerShip1_orange.png')).convert_alpha()
 player_mini_img = pygame.transform.scale(player_img, (25, 19))
 player_mini_img.set_colorkey(BLACK)
+
+#飛彈
+bullet_img = pygame.image.load(path.join(img_folder, 'laserRed16.png')).convert()
+missile_img = pygame.image.load(path.join(img_folder, 'missile.png')).convert_alpha()
+###################################################
+#載入音樂
+
+shooting_sound = pygame.mixer.Sound(path.join(sound_folder, 'pew.wav'))
+missile_sound = pygame.mixer.Sound(path.join(sound_folder, 'rocket.ogg'))
+
 ###################################################
 ## Game loop
 running = True
@@ -231,7 +278,9 @@ while running:
         pygame.time.wait(1000)
         menu_display = False
 
+        bullets = pygame.sprite.Group()
         all_sprites = pygame.sprite.Group()
+
         player = Player()
         all_sprites.add(player)
 
