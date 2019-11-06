@@ -69,6 +69,21 @@ def main_menu():
     screen.fill(BLACK)
     draw_text(screen, "倒數三秒鐘!", 40, WIDTH/2, HEIGHT/2)
     pygame.display.update()
+
+def game_Over_screen():
+    global screen
+
+    screen.blit(background, (0,0))
+    draw_text(screen, "Game OVER !", 30, WIDTH/2, HEIGHT/2)
+    draw_text(screen, "遊戲分數：" + str(score), 30, WIDTH/2, HEIGHT/2 + 40)
+    pygame.display.update()
+
+    while True:
+        event = pygame.event.poll() # 取一個事件
+        if event.type == pygame.KEYDOWN:
+            pygame.quit()
+            quit()
+
 #********************* 物件 ***********************
 # 玩家
 class Player(pygame.sprite.Sprite):
@@ -133,7 +148,7 @@ class Player(pygame.sprite.Sprite):
         elif self.rect.left < 0:
             self.rect.left = 0
 
-        if self.rect.bottom > HEIGHT:
+        if self.rect.bottom > HEIGHT and self.hidden != True:
             self.rect.bottom = HEIGHT
         elif self.rect.top < HEIGHT *0.75:
             self.rect.top = HEIGHT *0.75
@@ -380,6 +395,8 @@ for sound in ['expl3.wav', 'expl6.wav']:
     expl_sounds.append(pygame.mixer.Sound(path.join(sound_folder, sound)))
 
 pygame.mixer.music.set_volume(0.2)
+
+player_die_sound = pygame.mixer.Sound(path.join(sound_folder, 'rumble1.ogg'))
 ###################################################
 ## Game loop
 running = True
@@ -421,8 +438,7 @@ while running:
     all_sprites.update()
 
     # 4.偵測 飛彈&隕石 碰撞
-    hits = pygame.sprite.groupcollide(meteors, bullets, True, False) # (隕石, 子彈, 隕石刪除TRUE, 子彈刪除TRUE)
-    
+    hits = pygame.sprite.groupcollide(meteors, bullets, True, True) # (隕石, 子彈, 隕石刪除TRUE, 子彈刪除TRUE)
     for hit in hits:
         print(hit.radius)
         score += 60 - hit.radius
@@ -433,14 +449,34 @@ while running:
 
         newMeteor()
 
-   
+    # 5.偵測 玩家&隕石 碰撞
+    hits = pygame.sprite.spritecollide(player, meteors, True, pygame.sprite.collide_circle)
+    for hit in hits:
+        player.shield -= hit.radius * 2
+        expl = Explosion(hit.rect.center, 'sm')
+        all_sprites.add(expl)
+        newMeteor()
+        if player.shield <= 0: # 血扣完 死亡
+            player_die_sound.play()
+            death_explosion = Explosion(player.rect.center, 'player')
+            all_sprites.add(death_explosion)
 
+            player.hide() # 隱藏
+            player.lives -= 1
+            player.shield = 100
+
+    if player.lives <= 0 and not death_explosion.alive():
+        running = False
+        game_Over_screen()
     
     
     screen.fill(BLACK)
     screen.blit(background, background_rect)
 
-    draw_shield_bar(screen, 10, 10, player.shield)#test
+    # 生命數 & & 血量
+    draw_lives(screen, WIDTH - 100, 10, player.lives, player_mini_img)
+    draw_shield_bar(screen, 10, 10, player.shield)
+    draw_text(screen, '得分：' + str(score), 18, WIDTH / 2, 10)
     all_sprites.draw(screen)
 
     pygame.display.flip() 
