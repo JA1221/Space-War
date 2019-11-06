@@ -33,22 +33,23 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("太空戰爭")
 clock = pygame.time.Clock()     ## For syncing the FPS
 ###############################
-
 #遊戲主畫面
 def main_menu():
     global screen
 
+    # 載入主畫面音樂
     menu_song = pygame.mixer.music.load(path.join(sound_folder, "menu.mp3"))
-    pygame.mixer.music.play(-1)
+    # pygame.mixer.music.play(-1)
 
-    title = pygame.image.load(path.join(img_folder, "main.png")).convert()
-    title = pygame.transform.scale(title, (WIDTH, HEIGHT), screen)#縮放
-
-    screen.blit(title, (0,0))
+    # 背景圖片
+    background = pygame.image.load(path.join(img_folder, "main.png")).convert()
+    background = pygame.transform.scale(background, (WIDTH, HEIGHT), screen)#縮放
+    screen.blit(background, (0,0))
 
     draw_text(screen, "按下 [ENTER] 開始遊戲", 30, WIDTH/2, HEIGHT/2)
     draw_text(screen, "or [Q] 離開", 30, WIDTH/2, (HEIGHT/2)+40)
     pygame.display.update()
+
     while True:
         event = pygame.event.poll() # 取一個事件
         if event.type == pygame.KEYDOWN:
@@ -80,6 +81,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = WIDTH / 2
         self.rect.bottom = HEIGHT - 10
         self.speedx = 0 
+        self.speedy = 0
         self.shield = 100
         self.shoot_delay = 250
         self.last_shot = pygame.time.get_ticks()
@@ -101,11 +103,11 @@ class Player(pygame.sprite.Sprite):
             self.rect.centerx = WIDTH / 2
             self.rect.bottom = HEIGHT - 30
 
-        self.speedx = 0     ## makes the player static in the screen by default. 
-        # then we have to check whether there is an event hanlding being done for the arrow keys being 
-        ## pressed 
+        # 速度歸零
+        self.speedx = 0
+        self.speedy = 0
 
-        ## will give back a list of the keys which happen to be pressed down at that moment
+        # 偵測方向鍵
         keystate = pygame.key.get_pressed()     
         if keystate[pygame.K_LEFT]:
             self.speedx = -5
@@ -114,20 +116,28 @@ class Player(pygame.sprite.Sprite):
         if keystate[pygame.K_UP]:
             self.speedy = -5
         if keystate[pygame.K_DOWN]:
-            self.speedy = -5
+            self.speedy = 5
 
 
-        #Fire weapons by holding spacebar
+        # 空白建發射
         if keystate[pygame.K_SPACE]:
             self.shoot()
 
-        ## check for the borders at the left and right
+        # 移動
+        self.rect.x += self.speedx
+        self.rect.y += self.speedy
+        # 保持視窗界線內
         if self.rect.right > WIDTH:
             self.rect.right = WIDTH
-        if self.rect.left < 0:
+        elif self.rect.left < 0:
             self.rect.left = 0
 
-        self.rect.x += self.speedx
+        if self.rect.bottom > HEIGHT:
+            self.rect.bottom = HEIGHT
+        elif self.rect.top < HEIGHT *0.75:
+            self.rect.top = HEIGHT *0.75
+
+        
 
     def shoot(self):
         ## to tell the bullet where to spawn
@@ -191,7 +201,7 @@ def draw_shield_bar(surf, x, y, pct):
     pygame.draw.rect(surf, BLUE, shield_rect)
     pygame.draw.rect(surf, WHITE, total_rect, 2)
 
-#顯示 
+#顯示生命數
 def draw_lives(surf, x, y, lives, img):
     for i in range(lives):
         img_rect= img.get_rect()
@@ -199,7 +209,19 @@ def draw_lives(surf, x, y, lives, img):
         img_rect.y = y
         surf.blit(img, img_rect)
 
-#############################
+
+###################################################
+# 載入圖片
+
+#背景
+background = pygame.image.load(path.join(img_folder, 'starfield.png')).convert()
+background_rect = background.get_rect()
+
+#玩家
+player_img = pygame.image.load(path.join(img_folder, 'playerShip1_orange.png')).convert()
+player_mini_img = pygame.transform.scale(player_img, (25, 19))
+player_mini_img.set_colorkey(BLACK)
+###################################################
 ## Game loop
 running = True
 menu_display = True
@@ -207,6 +229,11 @@ while running:
     if menu_display:
         main_menu()
         pygame.time.wait(1000)
+        menu_display = False
+
+        all_sprites = pygame.sprite.Group()
+        player = Player()
+        all_sprites.add(player)
 
     clock.tick(FPS)
     for event in pygame.event.get():
@@ -218,9 +245,15 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+    
+    screen.fill(BLACK)
+    screen.blit(background, background_rect)
+
     draw_shield_bar(screen, 10, 10, 50)#test
-    pygame.display.flip()    
-    pygame.time.wait(1000)
+    all_sprites.update()
+    all_sprites.draw(screen)
+    pygame.display.flip() 
+    pygame.display.set_caption("Space Shooter " + str(int(clock.get_fps())) + " fps")    
 
 
 pygame.quit()
