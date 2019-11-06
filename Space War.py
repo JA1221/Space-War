@@ -185,6 +185,50 @@ class Player(pygame.sprite.Sprite):
         self.hide_timer = pygame.time.get_ticks()
         self.rect.center = (WIDTH / 2, HEIGHT + 200)
 
+# 隕石
+class Meteor(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image_orig = random.choice(meteor_images)
+        self.image = self.image_orig.copy()
+        self.rect = self.image.get_rect()
+        self.radius = int(self.rect.width *.90 / 2)
+        self.rotate_delay = 50
+        # 生成位置
+        self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+        self.rect.y = random.randrange(-150, -100)
+        # 移動方向速度
+        self.speedy = random.randrange(5, 20)
+        self.speedx = random.randrange(-2, 2)
+
+        # 旋轉
+        self.rotation = 0
+        self.rotation_speed = random.randrange(-8, 8)
+        self.last_update = pygame.time.get_ticks()  ## time when the rotation has to happen
+        
+    def rotate(self):
+        time_now = pygame.time.get_ticks()
+        # 旋轉間隔
+        if time_now - self.last_update > self.rotate_delay:
+            self.last_update = time_now
+            #計算旋轉角度 & 儲存
+            self.rotation = (self.rotation + self.rotation_speed) % 360
+            new_image = pygame.transform.rotate(self.image_orig, self.rotation)
+            #更新位置
+            old_center = self.rect.center
+            self.image = new_image
+            self.rect = self.image.get_rect()
+            self.rect.center = old_center
+
+    def update(self):
+        self.rotate()
+        self.rect.x += self.speedx
+        self.rect.y += self.speedy
+
+        if (self.rect.top > HEIGHT) or (self.rect.left > WIDTH) or (self.rect.right < 0):
+            self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+            self.rect.y = random.randrange(-100, -40)
+            self.speedy = random.randrange(1, 8)        ## for randomizing the speed of the Mob
 # 子彈
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -246,7 +290,10 @@ def draw_lives(surf, x, y, lives, img):
         img_rect.y = y
         surf.blit(img, img_rect)
 
-
+def newMeteor():
+    newMeteor = Meteor()
+    # all_sprites.add(newMeteor)
+    Meteors.add(newMeteor)
 ###################################################
 # 載入圖片
 
@@ -259,8 +306,22 @@ player_img = pygame.image.load(path.join(img_folder, 'playerShip1_orange.png')).
 player_mini_img = pygame.transform.scale(player_img, (25, 19))
 player_mini_img.set_colorkey(BLACK)
 
+# 隕石
+meteor_images = []
+meteor_list = [
+    'meteorBrown_big1.png',
+    'meteorBrown_big2.png', 
+    'meteorBrown_med1.png', 
+    'meteorBrown_med3.png',
+    'meteorBrown_small1.png',
+    'meteorBrown_small2.png',
+    'meteorBrown_tiny1.png'
+]
+for image in meteor_list:
+    meteor_images.append(pygame.image.load(path.join(img_folder, image)).convert_alpha())
+
 #飛彈
-bullet_img = pygame.image.load(path.join(img_folder, 'laserRed16.png')).convert()
+bullet_img = pygame.image.load(path.join(img_folder, 'laserRed16.png')).convert_alpha()
 missile_img = pygame.image.load(path.join(img_folder, 'missile.png')).convert_alpha()
 ###################################################
 #載入音樂
@@ -273,14 +334,20 @@ missile_sound = pygame.mixer.Sound(path.join(sound_folder, 'rocket.ogg'))
 running = True
 menu_display = True
 while running:
+    # 遊戲主畫面
     if menu_display:
         main_menu()
         pygame.time.wait(1000)
         menu_display = False
 
+        #create Group
         bullets = pygame.sprite.Group()
         all_sprites = pygame.sprite.Group()
-
+        Meteors = pygame.sprite.Group()
+        # 建立Meteors
+        for i in range(8):
+            newMeteor()
+        # 建立玩家
         player = Player()
         all_sprites.add(player)
 
@@ -301,6 +368,10 @@ while running:
     draw_shield_bar(screen, 10, 10, 50)#test
     all_sprites.update()
     all_sprites.draw(screen)
+
+    Meteors.update()
+    Meteors.draw(screen)
+
     pygame.display.flip() 
     pygame.display.set_caption("Space Shooter " + str(int(clock.get_fps())) + " fps")    
 
