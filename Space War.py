@@ -13,7 +13,7 @@ HEIGHT = 600
 FPS = 60
 POWERUP_TIME = 5000
 BAR_LENGTH = 100
-BAR_HEIGHT = 10
+BAR_HEIGHT = 15
 
 #顏色
 WHITE = (255, 255, 255)
@@ -245,6 +245,23 @@ class Meteor(pygame.sprite.Sprite):
             self.rect.y = random.randrange(-100, -40)
             self.speedy = random.randrange(1, 8)
 
+# 道具
+class Pow(pygame.sprite.Sprite):
+    def __init__(self, center):
+        pygame.sprite.Sprite.__init__(self)
+        self.type = random.choice(['shield', 'gun'])
+        self.image = powerup_images[self.type]
+        self.rect = self.image.get_rect()
+
+        self.rect.center = center
+        self.speedy = 2
+
+    def update(self):
+        self.rect.y += self.speedy
+
+        if self.rect.top > HEIGHT:
+            self.kill()
+
 # 子彈
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -320,7 +337,7 @@ def draw_shield_bar(surf, x, y, pct):
     total_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     shield_rect = pygame.Rect(x, y, shield_NUM, BAR_HEIGHT)
     
-    pygame.draw.rect(surf, BLUE, shield_rect)
+    pygame.draw.rect(surf, GREEN, shield_rect)
     pygame.draw.rect(surf, WHITE, total_rect, 2)
 
 #顯示生命數
@@ -385,6 +402,11 @@ for i in range(9):
     filename = 'sonicExplosion0{}.png'.format(i)
     img = pygame.image.load(path.join(img_folder, filename)).convert_alpha()
     explosion_anim['player'].append(img)
+
+    # 道具
+    powerup_images = {}
+    powerup_images['shield'] = pygame.image.load(path.join(img_folder, 'shield_gold.png')).convert_alpha()
+    powerup_images['gun'] = pygame.image.load(path.join(img_folder, 'bolt_gold.png')).convert_alpha()
 ###################################################
 #載入音樂
 
@@ -416,6 +438,8 @@ while running:
         bullets = pygame.sprite.Group()
         all_sprites = pygame.sprite.Group()
         meteors = pygame.sprite.Group()
+        powerups = pygame.sprite.Group()
+
         # 建立meteors
         for i in range(8):
             newMeteor()
@@ -463,6 +487,11 @@ while running:
         expl = Explosion(hit.rect.center, 'lg')
         all_sprites.add(expl)
 
+        # 機率性掉道具
+        if random.random() > 0.95:
+            pow = Pow(hit.rect.center)
+            all_sprites.add(pow)
+            powerups.add(pow)
         newMeteor()
 
     # 5.偵測 玩家&隕石 碰撞
@@ -481,9 +510,20 @@ while running:
             player.lives -= 1
             player.shield = 100
 
+    # 6.檢查生命數
     if player.lives <= 0 and not death_explosion.alive():
         running = False
         game_Over_screen()
+
+    # 7.偵測道具碰撞
+    hits = pygame.sprite.spritecollide(player, powerups, True)
+    for hit in hits:
+        if hit.type == 'shield':
+            player.shield += random.randrange(10, 30)
+            if player.shield > 100:
+                player.shield = 100
+        if hit.type == 'gun':
+            player.powerup()
     
     
     screen.fill(BLACK)
