@@ -67,7 +67,9 @@ def main_menu():
     ready = pygame.mixer.Sound(path.join(sound_folder,'getready.ogg'))
     ready.play()
     screen.fill(BLACK)
-    draw_text(screen, "倒數三秒鐘!", 40, WIDTH/2, HEIGHT/2)
+    draw_text(screen, "遊戲開始!", 40, WIDTH/2, HEIGHT/2 - 50 )
+    draw_text(screen, "方向鍵 -> 移動", 30, WIDTH/2, HEIGHT/2)
+    draw_text(screen, "空白鍵 -> 發射", 30, WIDTH/2, HEIGHT/2 + 40)
     pygame.display.update()
 
 def game_Over_screen():
@@ -431,7 +433,7 @@ while running:
     # 1.遊戲主畫面
     if menu_display:
         main_menu()
-        pygame.time.wait(1000)
+        pygame.time.wait(3000)
         menu_display = False
         pygame.mixer.music.stop()
 
