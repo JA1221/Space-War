@@ -39,15 +39,15 @@ def main_menu():
 
     # 載入主畫面音樂
     menu_song = pygame.mixer.music.load(path.join(sound_folder, 'menu.mp3'))
-    # pygame.mixer.music.play(-1)
+    pygame.mixer.music.play(-1)
 
     # 背景圖片
     background = pygame.image.load(path.join(img_folder, "main.png")).convert()
     background = pygame.transform.scale(background, (WIDTH, HEIGHT), screen)#縮放
     screen.blit(background, (0,0))
 
-    draw_text(screen, "按下 [ENTER] 開始遊戲", 30, WIDTH/2, HEIGHT/2)
-    draw_text(screen, "or [Q] 離開", 30, WIDTH/2, (HEIGHT/2)+40)
+    draw_text(screen, "按下 [ENTER] 開始遊戲", 30, WIDTH/2, HEIGHT/2 + 100)
+    draw_text(screen, "or [Q] 離開", 30, WIDTH/2, (HEIGHT/2)+ 140)
     pygame.display.update()
 
     while True:
@@ -356,7 +356,7 @@ def newMeteor():
 # 載入圖片
 
 #背景
-background = pygame.image.load(path.join(img_folder, 'starfield.png')).convert()
+background = pygame.image.load(path.join(img_folder, 'starfield.jpg')).convert()
 background_rect = background.get_rect()
 
 #玩家
@@ -433,6 +433,12 @@ while running:
         main_menu()
         pygame.time.wait(1000)
         menu_display = False
+        pygame.mixer.music.stop()
+
+        # 播放 遊戲音樂
+        pygame.mixer.music.load(path.join(sound_folder, 'bgm.mp3'))
+        pygame.mixer.music.play(-1)     ## makes the gameplay sound in an endless loop
+        
 
         # create Group
         bullets = pygame.sprite.Group()
