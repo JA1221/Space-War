@@ -244,6 +244,7 @@ class Meteor(pygame.sprite.Sprite):
             self.rect.x = random.randrange(0, WIDTH - self.rect.width)
             self.rect.y = random.randrange(-100, -40)
             self.speedy = random.randrange(1, 8)
+
 # 子彈
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -401,6 +402,9 @@ player_die_sound = pygame.mixer.Sound(path.join(sound_folder, 'rumble1.ogg'))
 ## Game loop
 running = True
 menu_display = True
+
+penetrate = False
+
 while running:
     # 1.遊戲主畫面
     if menu_display:
@@ -429,16 +433,28 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        #ESC離開遊戲
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
+        keyinput = pygame.key.get_pressed()   
+        
+        # ESC 離開  
+        if keyinput[pygame.K_ESCAPE]:
+            running = False
+        # z鍵 子彈穿透模式
+        if keyinput[pygame.K_z]:
+            penetrate = True
+        else:
+            penetrate = False
+
+                
 
     # 3.精靈更新
     all_sprites.update()
 
     # 4.偵測 飛彈&隕石 碰撞
-    hits = pygame.sprite.groupcollide(meteors, bullets, True, True) # (隕石, 子彈, 隕石刪除TRUE, 子彈刪除TRUE)
+    if penetrate == False:
+        hits = pygame.sprite.groupcollide(meteors, bullets, True, True) # (隕石, 子彈, 隕石刪除TRUE, 子彈刪除TRUE)
+    else:
+        hits = pygame.sprite.groupcollide(meteors, bullets, True, False)
+
     for hit in hits:
         print(hit.radius)
         score += 60 - hit.radius
